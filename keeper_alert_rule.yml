@@ -1,0 +1,92 @@
+groups:
+  - name: clickhousekeeperAlerts
+    rules:
+      - alert: ClickHouseKeeperDown
+        expr: ck_keeper_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: Keeper
+        annotations:
+          summary: "ClickHouse Keeper 节点不可达 ({{ $labels.keeper_host }})"
+          description: "节点 {{ $labels.keeper_host }} 在过去 1 分钟内无法响应 'mntr' 命令，可能已宕机或网络隔离。"
+
+      - alert: ClickHouseKeeperNoLeader
+        expr: count(ck_keeper_leader == 1) == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: Keeper
+        annotations:
+          summary: "ClickHouse Keeper 集群无 Leader"
+          description: "集群中没有任何节点处于 Leader 状态。"
+
+      - alert: ClickHouseKeeperMultipleLeaders
+        expr: count(ck_keeper_leader == 1) > 1
+        for: 1m
+        labels:
+          severity: critical
+          service: Keeper
+        annotations:
+          summary: "ClickHouse Keeper 集群存在多个 Leader"
+          description: "检测到 {{ $value }} 个 Leader 节点，可能发生脑裂、"
+
+      - alert: ClickHouseKeeperLeaderChange
+        expr: changes(ck_keeper_leader[5m]) > 0
+        for: 3m
+        labels:
+          severity: warning
+          service: Keeper
+        annotations:
+          summary: "ClickHouse Keeper Leader 发生变更"
+          description: "在过去 5 分钟内，Leader 节点发生了 {{ $value }} 次变更。相关实例：{{ $labels.keeper_host }}。"
+
+      - alert: ClickHouseKeeperSyncedFollowersTooLow
+        expr: ck_keeper_synced_followers < 2 and ck_keeper_leader == 1 and count(ck_keeper_leader == 1) == 1
+        for: 3m
+        labels:
+          severity: warning
+          service: Keeper
+        annotations:
+          summary: "Leader 节点已同步 Follower 数量过低 ({{ $labels.keeper_host }})"
+          description: "Leader {{ $labels.keeper_host }} 已同步 Follower {{ $value }} 个。"
+
+      - alert: ClickHouseKeeperLatencyHigh
+        expr: ck_keeper_latency_ms{type="avg"} > 100
+        for: 2m
+        labels:
+          severity: warning
+          service: Keeper
+        annotations:
+          summary: "Keeper 节点平均延迟过高 ({{ $labels.keeper_host }})"
+          description: "节点 {{ $labels.keeper_host }} 的平均请求延迟为 {{ $value }}ms。"
+
+      - alert: ClickHouseKeeperOutstandingRequestsHigh
+        expr: ck_keeper_outstanding_requests > 100
+        for: 2m
+        labels:
+          severity: warning
+          service: Keeper
+        annotations:
+          summary: "Keeper 节点积压请求过多 ({{ $labels.keeper_host }})"
+          description: "节点 {{ $labels.keeper_host }} 有 {{ $value }} 个未处理的积压请求。"
+
+      - alert: ClickHouseKeeperFDUsageHigh
+        expr: (ck_keeper_open_file_descriptor_count / ck_keeper_max_file_descriptor_count) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          service: Keeper
+        annotations:
+          summary: "Keeper 节点文件描述符使用率过高 ({{ $labels.keeper_host }})"
+          description: "节点 {{ $labels.keeper_host }} 的文件描述符使用率达到 {{ printf \"%.2f\" $value }}。"
+
+      - alert: ClickHouseKeeperConnectionsLost
+        expr: ck_keeper_connections < 6 and ck_keeper_leader == 1
+        for: 3m
+        labels:
+          severity: critical
+          service: Keeper
+        annotations:
+          summary: "Keeper ({{ $labels.keeper_host }}) 有未链接的ck节点。"
+          description: "节点 {{ $labels.keeper_host }} 的活跃连接数为 {{ $value }}，低于ck集群个数。"

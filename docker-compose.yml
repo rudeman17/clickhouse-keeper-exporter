@@ -1,0 +1,18 @@
+version: '3.8'
+services:
+  keeper-exporter:
+    image: keeper-exporter:latest
+    container_name: keeper-exporter
+    environment:
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "9141:9141"
+    command: ["--keeper-hosts", "172.21.20.202:9181,172.21.20.203:9181,172.21.20.202:9181"]
+    restart: unless-stopped
+    networks:
+      - prometheus_default
+
+networks:
+  prometheus_default:
+    external: true
+    
