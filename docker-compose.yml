@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   keeper-exporter:
-    image: keeper-exporter:latest
+    image: crpi-csxl03lmkh4ptwpx.cn-chengdu.personal.cr.aliyuncs.com/zhanglei001/keeper-exporter:0.0.1
     container_name: keeper-exporter
     environment:
       - PYTHONUNBUFFERED=1
